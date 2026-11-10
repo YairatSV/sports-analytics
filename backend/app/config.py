@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
     espn_timeout_seconds: float = 12.0
     cache_ttl_seconds: int = 30
+    database_url: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
