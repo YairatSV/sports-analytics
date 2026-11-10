@@ -180,6 +180,12 @@ footer{
       <div id="probabilities"></div>
 
       <div class="notice" id="modelNote"></div>
+      <div class="card" style="background:#0b1421;margin-top:15px">
+  <h3>SIMULACIÓN MONTE CARLO</h3>
+  <div class="metric green" id="simCount">10,000</div>
+  <p class="muted">Escenarios simulados por enfrentamiento</p>
+  <div id="simulation"></div>
+</div>
       <button class="secondary" onclick="saveAnalysis()">GUARDAR ANÁLISIS</button>
     </div>
   </section>
@@ -204,58 +210,59 @@ footer{
 </footer>
 
 <script>
+
 let sport = "soccer";
 let lastAnalysis = null;
+const SIMULATIONS = 10000;
 
 function changeSport(value,button){
-  sport = value;
+  sport=value;
   document.querySelectorAll(".tab").forEach(
     b=>b.classList.remove("active")
   );
   button.classList.add("active");
 
-  const soccer = sport === "soccer";
-  document.getElementById("analysisTitle").textContent =
-    soccer ? "⚽ Analizador de fútbol" :
-    sport === "nfl" ? "🏈 Analizador NFL" : "🏀 Analizador NBA";
+  const soccer=sport==="soccer";
 
-  document.getElementById("analysisDescription").textContent =
+  document.getElementById("analysisTitle").textContent=
+    soccer?"⚽ Analizador de fútbol":
+    sport==="nfl"?"🏈 Analizador NFL":"🏀 Analizador NBA";
+
+  document.getElementById("analysisDescription").textContent=
     soccer
-    ? "Calcula probabilidades de resultados con la distribución de Poisson."
-    : "Estima el rendimiento y la probabilidad de victoria mediante una aproximación normal.";
+    ?"Modelo Poisson y simulación Monte Carlo de goles."
+    :"Modelo normal y simulación Monte Carlo de puntos.";
 
-  document.getElementById("homeLabel").textContent =
-    soccer ? "Goles esperados local (λ)" :
-    sport === "nfl" ? "Puntos esperados local" : "Puntos esperados local";
+  document.getElementById("homeLabel").textContent=
+    soccer?"Goles esperados local (λ)":"Puntos esperados local";
 
-  document.getElementById("awayLabel").textContent =
-    soccer ? "Goles esperados visitante (λ)" :
-    "Puntos esperados visitante";
+  document.getElementById("awayLabel").textContent=
+    soccer?"Goles esperados visitante (λ)":"Puntos esperados visitante";
 
-  document.getElementById("sdHomeBox").style.display =
-    soccer ? "none" : "block";
-  document.getElementById("sdAwayBox").style.display =
-    soccer ? "none" : "block";
+  document.getElementById("sdHomeBox").style.display=
+    soccer?"none":"block";
+  document.getElementById("sdAwayBox").style.display=
+    soccer?"none":"block";
 
-  document.getElementById("homeMean").value =
-    soccer ? 1.65 : sport === "nfl" ? 24 : 112;
-  document.getElementById("awayMean").value =
-    soccer ? 1.10 : sport === "nfl" ? 20 : 108;
+  document.getElementById("homeMean").value=
+    soccer?1.65:sport==="nfl"?24:112;
+  document.getElementById("awayMean").value=
+    soccer?1.10:sport==="nfl"?20:108;
 
   document.getElementById("results").style.display="none";
 }
 
 function poisson(lambda,k){
-  let p = Math.exp(-lambda);
-  for(let i=1;i<=k;i++) p *= lambda/i;
+  let p=Math.exp(-lambda);
+  for(let i=1;i<=k;i++)p*=lambda/i;
   return p;
 }
 
 function erf(x){
-  const sign = x < 0 ? -1 : 1;
-  x = Math.abs(x);
-  const t = 1/(1+0.3275911*x);
-  const y = 1-(((((1.061405429*t-1.453152027)*t)
+  const sign=x<0?-1:1;
+  x=Math.abs(x);
+  const t=1/(1+0.3275911*x);
+  const y=1-(((((1.061405429*t-1.453152027)*t)
     +1.421413741)*t-0.284496736)*t
     +0.254829592)*t*Math.exp(-x*x);
   return sign*y;
@@ -265,38 +272,177 @@ function normalCDF(x){
   return 0.5*(1+erf(x/Math.sqrt(2)));
 }
 
+// Generador de números normales: Box-Muller
+function randomNormal(mean,sd){
+  let u=0,v=0;
+  while(u===0)u=Math.random();
+  while(v===0)v=Math.random();
+
+  const z=Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  return mean+sd*z;
+}
+
+// Generador de goles mediante Poisson
+function randomPoisson(lambda){
+  const limit=Math.exp(-lambda);
+  let product=1;
+  let k=0;
+
+  do{
+    k++;
+    product*=Math.random();
+  }while(product>limit);
+
+  return k-1;
+}
+
+// Motor Monte Carlo
+function monteCarlo(a,b,sdA,sdB){
+  let winsA=0,winsB=0,draws=0;
+  let totalA=0,totalB=0;
+  let scoreFrequency={};
+
+  for(let i=0;i<SIMULATIONS;i++){
+    let scoreA,scoreB;
+
+    if(sport==="soccer"){
+      scoreA=randomPoisson(a);
+      scoreB=randomPoisson(b);
+    }else{
+      scoreA=Math.max(0,Math.round(randomNormal(a,sdA)));
+      scoreB=Math.max(0,Math.round(randomNormal(b,sdB)));
+    }
+
+    totalA+=scoreA;
+    totalB+=scoreB;
+
+    if(scoreA>scoreB)winsA++;
+    else if(scoreA<scoreB)winsB++;
+    else draws++;
+
+    const key=scoreA+" - "+scoreB;
+    scoreFrequency[key]=(scoreFrequency[key]||0)+1;
+  }
+
+  const sortedScores=Object.entries(scoreFrequency)
+    .sort((x,y)=>y[1]-x[1]);
+
+  return {
+    winsA:100*winsA/SIMULATIONS,
+    winsB:100*winsB/SIMULATIONS,
+    draws:100*draws/SIMULATIONS,
+    avgA:totalA/SIMULATIONS,
+    avgB:totalB/SIMULATIONS,
+    mostFrequent:sortedScores[0][0],
+    frequency:sortedScores[0][1]*100/SIMULATIONS
+  };
+}
+
+function displaySimulation(result,home,away){
+  const rows=[
+    {name:"Victoria "+home,value:result.winsA},
+    ...(sport==="soccer"?[{name:"Empate",value:result.draws}]:[]),
+    {name:"Victoria "+away,value:result.winsB}
+  ];
+
+  document.getElementById("simulation").innerHTML=`
+    <div class="resultrow">
+      <span>Simulaciones realizadas</span>
+      <strong class="green">10,000</strong>
+    </div>
+    ${rows.map(r=>`
+      <div style="margin:13px 0">
+        <div class="resultrow">
+          <span>${r.name}</span>
+          <strong>${r.value.toFixed(2)}%</strong>
+        </div>
+        <div class="bar">
+          <div class="fill" style="width:${r.value}%"></div>
+        </div>
+      </div>
+    `).join("")}
+    <div class="resultrow">
+      <span>Promedio ${home}</span>
+      <strong>${result.avgA.toFixed(2)}</strong>
+    </div>
+    <div class="resultrow">
+      <span>Promedio ${away}</span>
+      <strong>${result.avgB.toFixed(2)}</strong>
+    </div>
+    <div class="resultrow">
+      <span>Marcador más frecuente</span>
+      <strong class="green">${result.mostFrequent}</strong>
+    </div>
+    <div class="resultrow">
+      <span>Frecuencia del marcador</span>
+      <strong>${result.frequency.toFixed(2)}%</strong>
+    </div>
+  `;
+}
+
 function analyze(){
-  const home = document.getElementById("home").value.trim();
-  const away = document.getElementById("away").value.trim();
-  const a = Number(document.getElementById("homeMean").value);
-  const b = Number(document.getElementById("awayMean").value);
+  const home=document.getElementById("home").value.trim();
+  const away=document.getElementById("away").value.trim();
+  const a=Number(document.getElementById("homeMean").value);
+  const b=Number(document.getElementById("awayMean").value);
 
-  if(!home || !away || home === away){
-    alert("Introduce dos nombres de equipos diferentes.");
+  if(!home||!away||home.toLowerCase()===away.toLowerCase()){
+    alert("Introduce dos equipos diferentes.");
     return;
   }
+
+  const max=sport==="soccer"?15:300;
+
   if(!Number.isFinite(a)||!Number.isFinite(b)||
-     a<=0||b<=0||a> (sport==="soccer"?15:300)||
-     b> (sport==="soccer"?15:300)){
-    alert("Introduce valores válidos para ambos equipos.");
+     a<=0||b<=0||a>max||b>max){
+    alert("Introduce valores válidos.");
     return;
   }
 
-  let rows = [];
-  let score = "";
-  let note = "";
+  let sdA=0,sdB=0;
 
-  if(sport === "soccer"){
+  if(sport!=="soccer"){
+    sdA=Number(document.getElementById("sdHome").value);
+    sdB=Number(document.getElementById("sdAway").value);
+
+    if(!Number.isFinite(sdA)||!Number.isFinite(sdB)||
+       sdA<=0||sdB<=0||sdA>100||sdB>100){
+      alert("Introduce desviaciones estándar válidas.");
+      return;
+    }
+  }
+
+  let rows=[];
+  let score="";
+  let note="";
+
+  if(sport==="soccer"){
     let winA=0,draw=0,winB=0,best=-1;
-    let bestScore = "";
+    let bestScore="";
 
     for(let i=0;i<=12;i++){
       for(let j=0;j<=12;j++){
         const p=poisson(a,i)*poisson(b,j);
-        if(i>j) winA+=p;
-        else if(i===j) draw+=p;
+
+        if(i>j)winA+=p;
+        else if(i===j)draw+=p;
         else winB+=p;
-        if(p>best){best=p;bestScore=i+" - "+j;}
+
+        if(p>best){
+          best=p;
+          bestScore=i+" - "+j;
+        }
+      }
+    }
+
+    let under25=0,bothScore=0;
+
+    for(let i=0;i<=12;i++){
+      for(let j=0;j<=12;j++){
+        const p=poisson(a,i)*poisson(b,j);
+
+        if(i+j<=2)under25+=p;
+        if(i>0&&j>0)bothScore+=p;
       }
     }
 
@@ -304,101 +450,124 @@ function analyze(){
       {name:"Victoria "+home,value:winA*100},
       {name:"Empate",value:draw*100},
       {name:"Victoria "+away,value:winB*100},
-      {name:"Más de 2.5 goles",value:
-        (1-[0,1,2].reduce((s,n)=>{
-          let v=0;
-          for(let i=0;i<=n;i++)v+=poisson(a,i)*poisson(b,n-i);
-          return s+v;
-        },0))*100}
+      {name:"Más de 2.5 goles",value:(1-under25)*100},
+      {name:"Menos de 2.5 goles",value:under25*100},
+      {name:"Ambos equipos marcan",value:bothScore*100}
     ];
+
     score=bestScore;
-    note="Modelo: Poisson independiente. λ local="+a+
-      " y λ visitante="+b+". La matriz considera marcadores de 0 a 12 goles.";
+    note="Modelo Poisson independiente. Goles esperados: "+
+      home+" "+a+" / "+away+" "+b+".";
   }else{
-    const sdA=Number(document.getElementById("sdHome").value);
-    const sdB=Number(document.getElementById("sdAway").value);
+    const combinedSD=Math.sqrt(sdA*sdA+sdB*sdB);
+    const p=normalCDF((a-b)/combinedSD);
 
-    if(!Number.isFinite(sdA)||!Number.isFinite(sdB)||
-       sdA<=0||sdB<=0||sdA>100||sdB>100){
-      alert("Introduce desviaciones estándar válidas.");
-      return;
-    }
-
-    const sd=Math.sqrt(sdA*sdA+sdB*sdB);
-    const p=normalCDF((a-b)/sd);
     rows=[
       {name:"Victoria "+home,value:p*100},
       {name:"Victoria "+away,value:(1-p)*100}
     ];
+
     score=a.toFixed(1)+" - "+b.toFixed(1);
-    note="Modelo: aproximación normal para la diferencia de puntos. "+
-      "Desviación de la diferencia="+sd.toFixed(2)+
-      ". No contempla prórrogas ni dependencia entre anotaciones.";
+
+    note="Modelo normal de diferencia de puntos. "+
+      "Desviación estándar combinada: "+
+      combinedSD.toFixed(2)+".";
   }
 
-  document.getElementById("resultTitle").textContent =
+  const simulation=monteCarlo(a,b,sdA,sdB);
+
+  document.getElementById("resultTitle").textContent=
     home+" vs "+away;
+
   document.getElementById("resultScore").textContent=score;
-  document.getElementById("resultSubtitle").textContent =
-    "Proyección de marcador o puntuación";
-  document.getElementById("probabilities").innerHTML =
+
+  document.getElementById("resultSubtitle").textContent=
+    "Proyección matemática inicial";
+
+  document.getElementById("probabilities").innerHTML=
     rows.map(r=>`
       <div style="margin:15px 0">
         <div class="resultrow">
           <span>${r.name}</span>
-          <strong>${r.value.toFixed(1)}%</strong>
+          <strong>${r.value.toFixed(2)}%</strong>
         </div>
-        <div class="bar"><div class="fill"
-          style="width:${Math.min(100,Math.max(0,r.value))}%"></div></div>
+        <div class="bar">
+          <div class="fill" style="width:${Math.min(100,Math.max(0,r.value))}%"></div>
+        </div>
       </div>
     `).join("");
 
   document.getElementById("modelNote").textContent=note;
+
+  displaySimulation(simulation,home,away);
+
   document.getElementById("results").style.display="block";
 
   lastAnalysis={
     sport,home,away,score,
     date:new Date().toLocaleString("es-MX"),
-    probabilities:rows
+    probabilities:rows,
+    simulation
   };
 }
 
 function getHistory(){
   try{
-    return JSON.parse(localStorage.getItem("sportsHistory")||"[]");
-  }catch(e){return [];}
+    return JSON.parse(
+      localStorage.getItem("sportsHistory")||"[]"
+    );
+  }catch(e){
+    return [];
+  }
 }
 
 function saveAnalysis(){
   if(!lastAnalysis)return;
+
   const history=getHistory();
   history.unshift(lastAnalysis);
-  localStorage.setItem("sportsHistory",JSON.stringify(history.slice(0,50)));
+
+  localStorage.setItem(
+    "sportsHistory",
+    JSON.stringify(history.slice(0,50))
+  );
+
   renderHistory();
   alert("Análisis guardado correctamente.");
 }
 
 function renderHistory(){
   const history=getHistory();
-  document.getElementById("savedCount").textContent=history.length;
-  document.getElementById("history").innerHTML=history.length
+
+  document.getElementById("savedCount").textContent=
+    history.length;
+
+  document.getElementById("history").innerHTML=
+    history.length
     ?history.map(x=>`
       <div class="history-item">
-        <span><strong>${x.home} vs ${x.away}</strong>
-        <br><span class="muted">${x.sport.toUpperCase()} · ${x.date}</span></span>
+        <span>
+          <strong>${x.home} vs ${x.away}</strong>
+          <br>
+          <span class="muted">
+            ${x.sport.toUpperCase()} · ${x.date}
+          </span>
+        </span>
         <strong class="green">${x.score}</strong>
-      </div>`).join("")
+      </div>
+    `).join("")
     :'<p class="muted">Todavía no hay análisis guardados.</p>';
 }
 
 function clearHistory(){
-  if(confirm("¿Deseas borrar todos tus análisis guardados?")){
+  if(confirm("¿Borrar todos los análisis guardados?")){
     localStorage.removeItem("sportsHistory");
     renderHistory();
   }
 }
 
 renderHistory();
+
 </script>
 </body>
 </html>
