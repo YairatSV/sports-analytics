@@ -1,25 +1,36 @@
-# Backend
+# Backend API
 
-El backend previsto es Python con FastAPI y PostgreSQL.
+Backend Python con FastAPI. La API normaliza marcadores de fútbol, NFL y NBA desde un adaptador ESPN de uso experimental.
 
-## Primera fuente de marcadores (prototipo)
+## Endpoints
 
-El frontend de `develop` consulta directamente los endpoints públicos de scoreboard de ESPN para probar la experiencia sin coste ni clave API:
-- NFL: `football/nfl/scoreboard`
-- NBA: `basketball/nba/scoreboard`
-- Fútbol: `soccer/{league}/scoreboard` (por ejemplo `eng.1`, `esp.1`, `mex.1`).
+- `GET /health`: estado del servicio.
+- `GET /api/v1/sports`: deportes y ligas admitidas.
+- `GET /api/v1/matches?sport=soccer&league=mex.1`: partidos por competición.
+- `GET /api/v1/matches?sport=nfl`: marcador NFL.
+- `GET /api/v1/matches?sport=nba`: marcador NBA.
 
-**Advertencia:** son endpoints públicos no oficiales/no documentados como API de desarrolladores. No existe garantía de estabilidad, cobertura, disponibilidad, latencia ni permiso de uso comercial. Antes de un despliegue público serio se deben revisar los términos aplicables y validar cada competición. La interfaz no debe describirlos como un feed oficial ni garantizar tiempo real.
+## Ejecutar en un entorno Python
 
-## Responsabilidades del backend
+Desde la carpeta del repositorio:
 
-- Consumir proveedores desde el servidor cuando se requieran claves o protección de credenciales.
-- Normalizar equipos, competiciones, temporadas, partidos y eventos.
-- Cachear respuestas y registrar `source`, `fetched_at` y `provider_updated_at`.
-- Distinguir estado en vivo, final, programado, retrasado y fuente no disponible.
-- Ejecutar modelos estadísticos y registrar sus versiones.
-- Exponer endpoints: `GET /health`, `GET /sports`, `GET /matches?sport=soccer`, `GET /matches/{match_id}`, `GET /predictions/{match_id}`.
+```bash
+pip install -r backend/requirements.txt
+uvicorn app.main:app --app-dir backend --reload
+```
 
-## Estrategia de actualización
+La documentación interactiva estará en `/docs`.
 
-El prototipo consulta cada 60 segundos mientras la página está abierta. Esto es sondeo periódico, no streaming ni garantía de actualización inmediata. El backend futuro debe aplicar límites por proveedor, caché, reintentos con espera progresiva y controles de antigüedad para evitar saturación.
+## Fuente y limitaciones
+
+ESPN se consume mediante endpoints públicos no oficiales/no documentados como API para desarrolladores. No hay garantía de disponibilidad, cobertura, latencia ni autorización para uso comercial. La caché en memoria dura 30 segundos y se pierde al reiniciar el proceso. El frontend consulta aproximadamente cada 60 segundos. Esto no es streaming ni tiempo real garantizado.
+
+## Despliegue gratuito
+
+Se añadió `render.yaml` con un servicio web Render Free. En el panel de Render se puede crear un Blueprint desde este repositorio y elegir la rama `develop`. El servicio gratuito puede suspenderse por inactividad y tardar en despertar. No publiques secretos en el repositorio.
+
+Configura `CORS_ORIGINS` con el dominio exacto del frontend cuando se conozca. El valor comodín actual es solo para el prototipo.
+
+## PostgreSQL
+
+El esquema inicial está en `backend/schema.sql`. Todavía no se ejecutan escrituras en la base de datos: primero se debe crear la instancia PostgreSQL y configurar su URL privada como variable de entorno. El servicio API actual funciona como proxy de consulta con caché efímera.
