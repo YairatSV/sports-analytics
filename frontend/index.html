@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SPORTS ANALYTICS: análisis estadístico de fútbol, NFL y NBA.">
+  <title>SPORTS ANALYTICS</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./index.html">SPORTS <span>ANALYTICS</span></a>
+    <span class="environment">ENTORNO DE DESARROLLO</span>
+  </header>
+  <main class="shell">
+    <section class="intro">
+      <p class="eyebrow">CENTRO DE ANÁLISIS DEPORTIVO</p>
+      <h1>Datos, modelos y<br><span>probabilidades.</span></h1>
+      <p class="lead">Una base modular para analizar fútbol, NFL y NBA. Las estimaciones actuales son demostrativas; todavía no representan datos en vivo.</p>
+    </section>
+    <section class="status-grid" aria-label="Estado de los módulos">
+      <article class="status-card"><span class="sport">⚽ FÚTBOL</span><h2>Modelo Poisson</h2><p>Probabilidades de goles y resultados.</p><span class="tag ready">Motor matemático inicial</span></article>
+      <article class="status-card"><span class="sport">🏈 NFL</span><h2>Diferencia de puntos</h2><p>Base inicial para modelos de marcador.</p><span class="tag ready">Motor matemático inicial</span></article>
+      <article class="status-card"><span class="sport">🏀 NBA</span><h2>Ritmo y anotación</h2><p>Base inicial para modelos de puntuación.</p><span class="tag ready">Motor matemático inicial</span></article>
+    </section>
+    <section class="notice">
+      <h2>Estado del proyecto</h2>
+      <p>La interfaz, los modelos y la futura conexión de datos están separados. El siguiente paso será integrar un proveedor de resultados y estadísticas, junto con el backend y la base de datos.</p>
+      <ul><li>Sin claves API expuestas en el navegador.</li><li>Los datos en vivo se habilitarán al conectar un proveedor.</li><li>Las probabilidades son estimaciones estadísticas, no garantías.</li></ul>
+    </section>
+    <footer>SPORTS ANALYTICS · Proyecto en desarrollo</footer>
+  </main>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
