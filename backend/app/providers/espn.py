@@ -41,6 +41,8 @@ def _normalize(event: dict, sport: str) -> dict:
         "completed": bool(status_type.get("completed", False)),
         "live": status_type.get("state") == "in",
         "sport": sport,
+        "home_team_provider_id": str((home.get("team") or {}).get("id") or (home.get("team") or {}).get("displayName") or "home"),
+        "away_team_provider_id": str((away.get("team") or {}).get("id") or (away.get("team") or {}).get("displayName") or "away"),
     }
 
 
