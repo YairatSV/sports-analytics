@@ -1,4 +1,2 @@
-// Cuando el backend esté desplegado, coloca aquí su URL base.
-// Ejemplo: export const API_BASE = "https://sports-analytics-api.onrender.com";
-// Vacío = usar la consulta pública directa como respaldo durante el desarrollo.
-export const API_BASE = "";
+// Backend público desplegado en Render.
+export const API_BASE = "https://sports-analytics-api-7sjy.onrender.com";
