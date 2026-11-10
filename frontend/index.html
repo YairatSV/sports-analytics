@@ -3,32 +3,55 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="SPORTS ANALYTICS: análisis estadístico de fútbol, NFL y NBA.">
+  <meta name="description" content="SPORTS ANALYTICS: marcadores y análisis estadístico de fútbol, NFL y NBA.">
   <title>SPORTS ANALYTICS</title>
   <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="./index.html">SPORTS <span>ANALYTICS</span></a>
-    <span class="environment">ENTORNO DE DESARROLLO</span>
+    <span class="environment">DESARROLLO · FUENTE GRATUITA</span>
   </header>
   <main class="shell">
     <section class="intro">
       <p class="eyebrow">CENTRO DE ANÁLISIS DEPORTIVO</p>
-      <h1>Datos, modelos y<br><span>probabilidades.</span></h1>
-      <p class="lead">Una base modular para analizar fútbol, NFL y NBA. Las estimaciones actuales son demostrativas; todavía no representan datos en vivo.</p>
+      <h1>El deporte,<br><span>en datos.</span></h1>
+      <p class="lead">Marcadores de fútbol, NFL y NBA con actualización automática. La fuente actual es pública y no oficial; la disponibilidad y cobertura pueden variar.</p>
     </section>
-    <section class="status-grid" aria-label="Estado de los módulos">
-      <article class="status-card"><span class="sport">⚽ FÚTBOL</span><h2>Modelo Poisson</h2><p>Probabilidades de goles y resultados.</p><span class="tag ready">Motor matemático inicial</span></article>
-      <article class="status-card"><span class="sport">🏈 NFL</span><h2>Diferencia de puntos</h2><p>Base inicial para modelos de marcador.</p><span class="tag ready">Motor matemático inicial</span></article>
-      <article class="status-card"><span class="sport">🏀 NBA</span><h2>Ritmo y anotación</h2><p>Base inicial para modelos de puntuación.</p><span class="tag ready">Motor matemático inicial</span></article>
+    <section class="live-panel" aria-labelledby="scores-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">CENTRO DE PARTIDOS</p><h2 id="scores-title">Marcadores</h2></div>
+        <div class="feed-state"><span id="feed-dot" class="feed-dot"></span><span id="feed-status" role="status">Conectando…</span></div>
+      </div>
+      <div class="toolbar">
+        <div class="sport-tabs" role="group" aria-label="Seleccionar deporte">
+          <button class="sport-tab active" data-sport="soccer" type="button">⚽ Fútbol</button>
+          <button class="sport-tab" data-sport="nfl" type="button">🏈 NFL</button>
+          <button class="sport-tab" data-sport="nba" type="button">🏀 NBA</button>
+        </div>
+        <label id="league-wrap" class="league-wrap">Competición
+          <select id="league-select">
+            <option value="eng.1">Premier League</option><option value="esp.1">LaLiga</option>
+            <option value="mex.1">Liga MX</option><option value="usa.1">MLS</option>
+            <option value="uefa.champions">UEFA Champions League</option>
+          </select>
+        </label>
+      </div>
+      <div class="score-meta"><span id="updated-at">Esperando consulta…</span><button id="refresh-button" class="refresh-button" type="button">↻ Actualizar</button></div>
+      <div id="score-list" class="score-list" aria-live="polite"><p class="empty-state">Consultando marcadores…</p></div>
+      <p class="source-note">Fuente: ESPN (endpoint público no oficial). Actualización automática aproximada cada 60 segundos. No se garantiza cobertura completa ni tiempo real estricto.</p>
+    </section>
+    <section class="status-grid" aria-label="Motores matemáticos">
+      <article class="status-card"><span class="sport">⚽ FÚTBOL</span><h2>Modelo Poisson</h2><p>Probabilidades de goles y resultados.</p><span class="tag ready">Motor inicial</span></article>
+      <article class="status-card"><span class="sport">🏈 NFL</span><h2>Diferencia de puntos</h2><p>Base para modelos de marcador.</p><span class="tag ready">Motor inicial</span></article>
+      <article class="status-card"><span class="sport">🏀 NBA</span><h2>Ritmo y anotación</h2><p>Base para modelos de puntuación.</p><span class="tag ready">Motor inicial</span></article>
     </section>
     <section class="notice">
-      <h2>Estado del proyecto</h2>
-      <p>La interfaz, los modelos y la futura conexión de datos están separados. El siguiente paso será integrar un proveedor de resultados y estadísticas, junto con el backend y la base de datos.</p>
-      <ul><li>Sin claves API expuestas en el navegador.</li><li>Los datos en vivo se habilitarán al conectar un proveedor.</li><li>Las probabilidades son estimaciones estadísticas, no garantías.</li></ul>
+      <h2>Transparencia de datos</h2>
+      <p>Los marcadores proceden de una fuente externa. Una consulta exitosa no significa que el proveedor publique cada evento al instante. Las predicciones se mostrarán separadas de los resultados oficiales.</p>
+      <ul><li>No se requiere una clave API en esta primera fuente.</li><li>No se guardan credenciales en el navegador.</li><li>Backend y PostgreSQL se incorporarán para historial, caché y control de calidad.</li></ul>
     </section>
-    <footer>SPORTS ANALYTICS · Proyecto en desarrollo</footer>
+    <footer>SPORTS ANALYTICS · Proyecto en desarrollo · Datos externos sujetos a disponibilidad</footer>
   </main>
   <script type="module" src="./js/app.js"></script>
 </body>
