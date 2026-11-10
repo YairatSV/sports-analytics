@@ -42,6 +42,38 @@ def _status(match):
     return "scheduled"
 
 
+def _season_name(match, sport, league):
+    # Prefer the season explicitly supplied by the provider.
+    season = match.get("season")
+    if isinstance(season, dict):
+        name = season.get("displayName") or season.get("name") or season.get("year")
+        if name:
+            return str(name)
+    elif season:
+        return str(season)
+
+    match_date = _as_datetime(match.get("date"))
+    if match_date is None:
+        return "Temporada desconocida"
+
+    year = match_date.year
+    month = match_date.month
+
+    if sport == "nfl":
+        return f"{year - 1 if month <= 2 else year}"
+    if sport == "nba":
+        start_year = year - 1 if month <= 6 else year
+        return f"{start_year}-{start_year + 1}"
+
+    # Liga MX and MLS use calendar-year competition cycles here;
+    # most European soccer leagues run from the second half of one year
+    # into the first half of the next.
+    if league in {"mex.1", "usa.1"}:
+        return str(year)
+    start_year = year if month >= 7 else year - 1
+    return f"{start_year}-{start_year + 1}"
+
+
 async def save_scoreboard(pool, result: dict):
     sport = result["sport"]
     league = result["league"]
@@ -70,6 +102,27 @@ async def save_scoreboard(pool, result: dict):
             )
 
             for match in result.get("matches", []):
+                # Create or reuse the season for this competition.
+                season_name = _season_name(match, sport, league)
+                season_id = await conn.fetchval(
+                    """
+                    SELECT id FROM seasons
+                    WHERE competition_id = $1 AND name = $2
+                    ORDER BY id
+                    LIMIT 1
+                    """,
+                    competition_id, season_name,
+                )
+                if season_id is None:
+                    season_id = await conn.fetchval(
+                        """
+                        INSERT INTO seasons (competition_id, name)
+                        VALUES ($1, $2)
+                        RETURNING id
+                        """,
+                        competition_id, season_name,
+                    )
+
                 home_provider_id = str(match.get("home_team_provider_id") or match["home"])
                 away_provider_id = str(match.get("away_team_provider_id") or match["away"])
                 home_team_id = await conn.fetchval(
@@ -95,14 +148,15 @@ async def save_scoreboard(pool, result: dict):
                 await conn.execute(
                     """
                     INSERT INTO matches (
-                        competition_id, provider, provider_match_id,
+                        competition_id, season_id, provider, provider_match_id,
                         home_team_id, away_team_id, start_time, status,
                         home_score, away_score, provider_updated_at, fetched_at
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
                     ON CONFLICT (provider, provider_match_id)
                     DO UPDATE SET
                         competition_id = EXCLUDED.competition_id,
+                        season_id = EXCLUDED.season_id,
                         home_team_id = EXCLUDED.home_team_id,
                         away_team_id = EXCLUDED.away_team_id,
                         start_time = EXCLUDED.start_time,
@@ -112,7 +166,7 @@ async def save_scoreboard(pool, result: dict):
                         provider_updated_at = NOW(),
                         fetched_at = NOW()
                     """,
-                    competition_id, provider, str(match["id"]),
+                    competition_id, season_id, provider, str(match["id"]),
                     home_team_id, away_team_id, _as_datetime(match.get("date")),
                     _status(match), _as_score(match.get("home_score")),
                     _as_score(match.get("away_score")),
