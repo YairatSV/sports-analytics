@@ -1,0 +1,404 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sports Analytics</title>
+<style>
+:root {
+  --bg:#090e18; --panel:#111a29; --panel2:#172235;
+  --line:#26364d; --green:#31d58a; --text:#edf3fc;
+  --muted:#8d9bb0; --blue:#55a5ff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Arial,sans-serif;
+}
+header{
+  padding:22px 5%;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+  background:#0d1421;gap:12px;flex-wrap:wrap;
+}
+.brand{font-size:21px;font-weight:800;letter-spacing:1px}
+.brand span{color:var(--green)}
+.status{font-size:11px;color:var(--green)}
+.container{max-width:1150px;margin:auto;padding:30px 20px}
+h1{font-size:30px;margin:5px 0 10px}
+.subtitle{color:var(--muted);font-size:14px;line-height:1.6}
+.tabs{display:flex;gap:10px;margin:25px 0;flex-wrap:wrap}
+.tab{
+  background:var(--panel);border:1px solid var(--line);
+  color:var(--muted);padding:12px 20px;border-radius:9px;
+  cursor:pointer;font-weight:bold;
+}
+.tab.active{background:#123c30;color:var(--green);border-color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.card{
+  background:var(--panel);border:1px solid var(--line);
+  padding:20px;border-radius:13px;margin-bottom:18px;
+}
+.card h3{margin:0 0 15px;font-size:15px}
+.metric{font-size:27px;font-weight:bold;margin:10px 0}
+.green{color:var(--green)}
+.blue{color:var(--blue)}
+.muted{color:var(--muted);font-size:12px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px}
+input,select{
+  width:100%;background:#0b1320;color:white;
+  border:1px solid var(--line);padding:12px;
+  border-radius:8px;outline:none;
+}
+input:focus,select:focus{border-color:var(--green)}
+button.primary{
+  background:var(--green);color:#07130e;border:0;
+  padding:14px 20px;border-radius:8px;
+  font-weight:bold;cursor:pointer;width:100%;margin-top:18px;
+}
+button.secondary{
+  background:var(--panel2);color:var(--text);
+  border:1px solid var(--line);padding:9px 13px;
+  border-radius:7px;cursor:pointer;
+}
+.results{display:none;margin-top:20px}
+.resultrow{
+  display:flex;justify-content:space-between;gap:10px;
+  border-bottom:1px solid var(--line);padding:13px 0;
+}
+.bar{height:9px;background:#27364a;border-radius:10px;overflow:hidden;margin-top:8px}
+.fill{height:100%;background:var(--green);border-radius:10px}
+.history-item{
+  border-bottom:1px solid var(--line);padding:13px 0;
+  font-size:13px;display:flex;justify-content:space-between;gap:12px;
+}
+.notice{
+  padding:13px;background:#182536;border-radius:9px;
+  color:var(--muted);font-size:12px;line-height:1.6;
+}
+footer{
+  border-top:1px solid var(--line);padding:25px;
+  text-align:center;color:var(--muted);font-size:11px;
+}
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr}
+  .formgrid{grid-template-columns:1fr}
+  h1{font-size:25px}
+  .container{padding:22px 14px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">SPORTS <span>ANALYTICS</span></div>
+  <div class="status">● MOTOR ESTADÍSTICO ACTIVO</div>
+</header>
+
+<main class="container">
+  <p class="muted">SPORTS INTELLIGENCE PLATFORM / VERSION 1.0</p>
+  <h1>Centro de análisis deportivo</h1>
+  <p class="subtitle">
+    Analiza enfrentamientos, calcula probabilidades y genera
+    proyecciones mediante modelos matemáticos.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="muted">DEPORTES DISPONIBLES</div>
+      <div class="metric">03</div>
+      <div class="green">Soccer · NFL · NBA</div>
+    </div>
+    <div class="card">
+      <div class="muted">MODELOS ESTADÍSTICOS</div>
+      <div class="metric">02</div>
+      <div class="blue">Poisson · Normal</div>
+    </div>
+    <div class="card">
+      <div class="muted">ANÁLISIS GUARDADOS</div>
+      <div class="metric" id="savedCount">0</div>
+      <div class="green">Historial local</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="changeSport('soccer',this)">⚽ Fútbol</button>
+    <button class="tab" onclick="changeSport('nfl',this)">🏈 NFL</button>
+    <button class="tab" onclick="changeSport('nba',this)">🏀 NBA</button>
+  </div>
+
+  <section class="card">
+    <h3 id="analysisTitle">⚽ Analizador de fútbol</h3>
+    <p class="muted" id="analysisDescription">
+      Introduce los goles esperados de cada equipo para calcular
+      probabilidades mediante la distribución de Poisson.
+    </p>
+
+    <div class="formgrid">
+      <div>
+        <label>Equipo local</label>
+        <input id="home" value="Equipo local" maxlength="45">
+      </div>
+      <div>
+        <label>Equipo visitante</label>
+        <input id="away" value="Equipo visitante" maxlength="45">
+      </div>
+      <div>
+        <label id="homeLabel">Goles esperados local (λ)</label>
+        <input id="homeMean" type="number" min="0.01" max="15"
+          step="0.01" value="1.65">
+      </div>
+      <div>
+        <label id="awayLabel">Goles esperados visitante (λ)</label>
+        <input id="awayMean" type="number" min="0.01" max="15"
+          step="0.01" value="1.10">
+      </div>
+      <div id="sdHomeBox" style="display:none">
+        <label>Desviación estándar local</label>
+        <input id="sdHome" type="number" min="0.1" max="100"
+          step="0.1" value="12">
+      </div>
+      <div id="sdAwayBox" style="display:none">
+        <label>Desviación estándar visitante</label>
+        <input id="sdAway" type="number" min="0.1" max="100"
+          step="0.1" value="12">
+      </div>
+    </div>
+
+    <button class="primary" onclick="analyze()">CALCULAR PROYECCIÓN</button>
+
+    <div class="results" id="results">
+      <div class="card" style="background:#0b1421;margin-top:20px">
+        <div class="muted">RESULTADO DEL MODELO</div>
+        <h3 id="resultTitle" style="margin-top:12px"></h3>
+        <div class="metric green" id="resultScore"></div>
+        <div class="muted" id="resultSubtitle"></div>
+      </div>
+
+      <h3>Probabilidades calculadas</h3>
+      <div id="probabilities"></div>
+
+      <div class="notice" id="modelNote"></div>
+      <button class="secondary" onclick="saveAnalysis()">GUARDAR ANÁLISIS</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Historial de análisis</h3>
+    <p class="muted">Tus cálculos quedan guardados en este navegador.</p>
+    <div id="history"></div>
+    <button class="secondary" onclick="clearHistory()">Borrar historial</button>
+  </section>
+
+  <div class="notice">
+    IMPORTANTE: Las proyecciones son estimaciones matemáticas,
+    no resultados garantizados. En esta versión los datos son
+    introducidos manualmente. No representan estadísticas
+    oficiales ni información deportiva en tiempo real.
+  </div>
+</main>
+
+<footer>
+  SPORTS ANALYTICS © 2026 · SPORTS INTELLIGENCE PLATFORM
+</footer>
+
+<script>
+let sport = "soccer";
+let lastAnalysis = null;
+
+function changeSport(value,button){
+  sport = value;
+  document.querySelectorAll(".tab").forEach(
+    b=>b.classList.remove("active")
+  );
+  button.classList.add("active");
+
+  const soccer = sport === "soccer";
+  document.getElementById("analysisTitle").textContent =
+    soccer ? "⚽ Analizador de fútbol" :
+    sport === "nfl" ? "🏈 Analizador NFL" : "🏀 Analizador NBA";
+
+  document.getElementById("analysisDescription").textContent =
+    soccer
+    ? "Calcula probabilidades de resultados con la distribución de Poisson."
+    : "Estima el rendimiento y la probabilidad de victoria mediante una aproximación normal.";
+
+  document.getElementById("homeLabel").textContent =
+    soccer ? "Goles esperados local (λ)" :
+    sport === "nfl" ? "Puntos esperados local" : "Puntos esperados local";
+
+  document.getElementById("awayLabel").textContent =
+    soccer ? "Goles esperados visitante (λ)" :
+    "Puntos esperados visitante";
+
+  document.getElementById("sdHomeBox").style.display =
+    soccer ? "none" : "block";
+  document.getElementById("sdAwayBox").style.display =
+    soccer ? "none" : "block";
+
+  document.getElementById("homeMean").value =
+    soccer ? 1.65 : sport === "nfl" ? 24 : 112;
+  document.getElementById("awayMean").value =
+    soccer ? 1.10 : sport === "nfl" ? 20 : 108;
+
+  document.getElementById("results").style.display="none";
+}
+
+function poisson(lambda,k){
+  let p = Math.exp(-lambda);
+  for(let i=1;i<=k;i++) p *= lambda/i;
+  return p;
+}
+
+function erf(x){
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const t = 1/(1+0.3275911*x);
+  const y = 1-(((((1.061405429*t-1.453152027)*t)
+    +1.421413741)*t-0.284496736)*t
+    +0.254829592)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+function normalCDF(x){
+  return 0.5*(1+erf(x/Math.sqrt(2)));
+}
+
+function analyze(){
+  const home = document.getElementById("home").value.trim();
+  const away = document.getElementById("away").value.trim();
+  const a = Number(document.getElementById("homeMean").value);
+  const b = Number(document.getElementById("awayMean").value);
+
+  if(!home || !away || home === away){
+    alert("Introduce dos nombres de equipos diferentes.");
+    return;
+  }
+  if(!Number.isFinite(a)||!Number.isFinite(b)||
+     a<=0||b<=0||a> (sport==="soccer"?15:300)||
+     b> (sport==="soccer"?15:300)){
+    alert("Introduce valores válidos para ambos equipos.");
+    return;
+  }
+
+  let rows = [];
+  let score = "";
+  let note = "";
+
+  if(sport === "soccer"){
+    let winA=0,draw=0,winB=0,best=-1;
+    let bestScore = "";
+
+    for(let i=0;i<=12;i++){
+      for(let j=0;j<=12;j++){
+        const p=poisson(a,i)*poisson(b,j);
+        if(i>j) winA+=p;
+        else if(i===j) draw+=p;
+        else winB+=p;
+        if(p>best){best=p;bestScore=i+" - "+j;}
+      }
+    }
+
+    rows=[
+      {name:"Victoria "+home,value:winA*100},
+      {name:"Empate",value:draw*100},
+      {name:"Victoria "+away,value:winB*100},
+      {name:"Más de 2.5 goles",value:
+        (1-[0,1,2].reduce((s,n)=>{
+          let v=0;
+          for(let i=0;i<=n;i++)v+=poisson(a,i)*poisson(b,n-i);
+          return s+v;
+        },0))*100}
+    ];
+    score=bestScore;
+    note="Modelo: Poisson independiente. λ local="+a+
+      " y λ visitante="+b+". La matriz considera marcadores de 0 a 12 goles.";
+  }else{
+    const sdA=Number(document.getElementById("sdHome").value);
+    const sdB=Number(document.getElementById("sdAway").value);
+
+    if(!Number.isFinite(sdA)||!Number.isFinite(sdB)||
+       sdA<=0||sdB<=0||sdA>100||sdB>100){
+      alert("Introduce desviaciones estándar válidas.");
+      return;
+    }
+
+    const sd=Math.sqrt(sdA*sdA+sdB*sdB);
+    const p=normalCDF((a-b)/sd);
+    rows=[
+      {name:"Victoria "+home,value:p*100},
+      {name:"Victoria "+away,value:(1-p)*100}
+    ];
+    score=a.toFixed(1)+" - "+b.toFixed(1);
+    note="Modelo: aproximación normal para la diferencia de puntos. "+
+      "Desviación de la diferencia="+sd.toFixed(2)+
+      ". No contempla prórrogas ni dependencia entre anotaciones.";
+  }
+
+  document.getElementById("resultTitle").textContent =
+    home+" vs "+away;
+  document.getElementById("resultScore").textContent=score;
+  document.getElementById("resultSubtitle").textContent =
+    "Proyección de marcador o puntuación";
+  document.getElementById("probabilities").innerHTML =
+    rows.map(r=>`
+      <div style="margin:15px 0">
+        <div class="resultrow">
+          <span>${r.name}</span>
+          <strong>${r.value.toFixed(1)}%</strong>
+        </div>
+        <div class="bar"><div class="fill"
+          style="width:${Math.min(100,Math.max(0,r.value))}%"></div></div>
+      </div>
+    `).join("");
+
+  document.getElementById("modelNote").textContent=note;
+  document.getElementById("results").style.display="block";
+
+  lastAnalysis={
+    sport,home,away,score,
+    date:new Date().toLocaleString("es-MX"),
+    probabilities:rows
+  };
+}
+
+function getHistory(){
+  try{
+    return JSON.parse(localStorage.getItem("sportsHistory")||"[]");
+  }catch(e){return [];}
+}
+
+function saveAnalysis(){
+  if(!lastAnalysis)return;
+  const history=getHistory();
+  history.unshift(lastAnalysis);
+  localStorage.setItem("sportsHistory",JSON.stringify(history.slice(0,50)));
+  renderHistory();
+  alert("Análisis guardado correctamente.");
+}
+
+function renderHistory(){
+  const history=getHistory();
+  document.getElementById("savedCount").textContent=history.length;
+  document.getElementById("history").innerHTML=history.length
+    ?history.map(x=>`
+      <div class="history-item">
+        <span><strong>${x.home} vs ${x.away}</strong>
+        <br><span class="muted">${x.sport.toUpperCase()} · ${x.date}</span></span>
+        <strong class="green">${x.score}</strong>
+      </div>`).join("")
+    :'<p class="muted">Todavía no hay análisis guardados.</p>';
+}
+
+function clearHistory(){
+  if(confirm("¿Deseas borrar todos tus análisis guardados?")){
+    localStorage.removeItem("sportsHistory");
+    renderHistory();
+  }
+}
+
+renderHistory();
+</script>
+</body>
+</html>
